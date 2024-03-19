@@ -1,0 +1,59 @@
+- name: Tomcat 10 installation
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Install JAVA
+      apt:
+        name: default-jdk
+        state: present
+
+    - name: Download tomcat 10 binaries
+      get_url:
+         url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.19/bin/apache-tomcat-10.1.19.tar.gz 
+         dest: /opt
+
+    - name: Extract the binaries
+      unarchive:
+        src: /opt/apache-tomcat-10.1.19.tar.gz
+        dest: /opt
+        remote_src: yes
+
+    - name: Rename the apache-tomcat-10.1.19 directory
+      command:
+        chdir: /opt
+        cmd: mv apache-tomcat-10.1.19 tomcat
+
+    - name: Create tomcat group
+      group:
+        name: tomcat
+        system: yes
+        state: present
+
+    - name: Create tomcat user
+      user:
+        name: tomcat
+        group: tomcat
+        password: pa$$w0rd
+        home: /opt/tomcat
+        shell: "/bin/bash"
+
+    - name: Change owner & group of tomcat directory
+      file:
+        path: /opt/tomcat
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+
+    - name: Copy Tomcat service from local to remote
+      copy:
+        src: tomcat.service
+        dest: /etc/systemd/system/
+        mode: 0755
+
+
+    - name: Start tomcat Service
+      service:
+        name: tomcat
+        state: started
+        enabled: yes
